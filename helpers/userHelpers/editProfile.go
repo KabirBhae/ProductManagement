@@ -38,11 +38,11 @@ func EditAProfile(c echo.Context) error {
 	fmt.Println("only name: " + user.Name + " and password: " + user.Password + " were updated")
 
 	updatedUser := models.User{
+		ID:       existingUser.ID,
 		Name:     user.Name,
 		Username: existingUser.Username,
 		Email:    existingUser.Email,
 		Password: user.Password,
-		Type:     existingUser.Type,
 		Balance:  existingUser.Balance,
 		Status:   existingUser.Status,
 		IsAdmin:  existingUser.IsAdmin,

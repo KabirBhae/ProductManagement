@@ -9,7 +9,6 @@ import (
 )
 
 func Register(c echo.Context) error {
-	//fmt.Println(userFromToken)
 	claims := helpers.GetClaimsFromJwt(c)
 	isAdmin := claims.Admin
 
@@ -17,5 +16,5 @@ func Register(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "You are not an Admin!", Data: &echo.Map{"data": ""}})
 	}
 
-	return userHelpers.Register(c, true, "")
+	return userHelpers.Register(c, true)
 }

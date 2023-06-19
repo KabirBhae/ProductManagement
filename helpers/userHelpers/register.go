@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/net/context"
 	"net/http"
 	"time"
@@ -15,7 +16,7 @@ import (
 var userCollection = configs.GetCollection(configs.DB, "users")
 var validate = validator.New()
 
-func Register(c echo.Context, isAdminParam bool, buyerOrSeller string) error {
+func Register(c echo.Context, isAdminParam bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	var user models.User
 	defer cancel()
@@ -44,11 +45,11 @@ func Register(c echo.Context, isAdminParam bool, buyerOrSeller string) error {
 	}
 
 	newUser := models.User{
+		ID:       primitive.NewObjectID(),
 		Name:     user.Name,
 		Username: user.Username,
 		Email:    user.Email,
 		Password: user.Password,
-		Type:     buyerOrSeller,
 		Balance:  1000.0,
 		Status:   "Active",
 		IsAdmin:  isAdminParam,

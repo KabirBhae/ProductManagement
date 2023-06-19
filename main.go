@@ -10,6 +10,7 @@ func main() {
 
 	routes.UserRoute(e)
 	routes.AdminRoute(e)
+	routes.SellerRoute(e)
 
 	e.Logger.Fatal(e.Start(":6000"))
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func Register(c echo.Context) error {
-	return userHelpers.Register(c, false, "buyer")
+	return userHelpers.Register(c, false)
 }
 
 func Login(c echo.Context) error {

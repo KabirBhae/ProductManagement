@@ -5,6 +5,7 @@ import (
 	"ProductManagement/helpers"
 	"ProductManagement/models"
 	"ProductManagement/responses"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/net/context"
@@ -33,13 +34,15 @@ func Login(c echo.Context) error {
 	}
 
 	var user models.User
-	err := userCollection.FindOne(ctx, bson.M{"username": loginUser.Username, "password": loginUser.Password}).Decode(&user)
+
+	err := userCollection.FindOne(ctx, bson.M{"username": loginUser.Username, "status": "Active"}).Decode(&user)
 	if err != nil {
-		//fmt.Println("Inside error " + err.Error())
-		return c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "User Credentials don't match", Data: &echo.Map{"data": err.Error()}})
+		fmt.Println(err)
+		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "No such user exists", Data: &echo.Map{"data": err.Error()}})
 	}
-	if user.Status != "Active" {
-		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNotFound, Message: "User does not exist", Data: &echo.Map{"data": ""}})
+
+	if user.Password != loginUser.Password {
+		return c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "User Credentials don't match", Data: &echo.Map{"data": ""}})
 	}
 
 	// Set custom claims
@@ -47,6 +50,7 @@ func Login(c echo.Context) error {
 		user.Username,
 		user.Password,
 		user.IsAdmin,
+		user.ID.Hex(),
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 		},

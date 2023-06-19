@@ -11,6 +11,7 @@ type JwtCustomClaims struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Admin    bool   `json:"admin"`
+	ID       string `json:"id"`
 	jwt.RegisteredClaims
 }
 
