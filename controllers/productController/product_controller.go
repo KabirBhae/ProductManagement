@@ -12,3 +12,10 @@ func CreateProduct(c echo.Context) error {
 func BuyProduct(c echo.Context) error {
 	return productHelpers.BuyProduct(c)
 }
+func ViewAllProducts(c echo.Context) error {
+	return productHelpers.ViewAllProducts(c)
+}
+
+func ViewOwn(c echo.Context) error {
+	return productHelpers.ViewOwn(c)
+}

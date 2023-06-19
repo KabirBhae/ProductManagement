@@ -8,7 +8,10 @@ import (
 )
 
 func SellerRoute(e *echo.Echo) {
-	s := e.Group("/seller")
+	e.GET("/product/viewProducts", productController.ViewAllProducts)
+	e.GET("/product/viewProducts/:sellerUsername", productController.ViewOwn)
+
+	s := e.Group("/product")
 	s.Use(echojwt.WithConfig(helpers.Config))
 
 	s.POST("/createProduct", productController.CreateProduct)

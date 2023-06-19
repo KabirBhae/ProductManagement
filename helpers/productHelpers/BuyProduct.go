@@ -64,8 +64,8 @@ func BuyProduct(c echo.Context) error {
 		return c.JSON(http.StatusNotAcceptable, responses.UserResponse{Status: http.StatusNotAcceptable, Message: "user does not have sufficient balance", Data: &echo.Map{"data": ""}})
 	} else {
 		existingUser.Balance -= existingProduct.Price * float32(requestedProduct.Quantity)
-		_, err := userCollection.UpdateOne(ctx, bson.M{"username": usernameFromClaims}, bson.M{"$set": existingUser})
 
+		_, err := userCollection.UpdateOne(ctx, bson.M{"username": usernameFromClaims}, bson.M{"$set": existingUser})
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err.Error()}})
 		}
@@ -73,11 +73,10 @@ func BuyProduct(c echo.Context) error {
 		existingProduct.Quantity -= requestedProduct.Quantity
 
 		result, err2 := productCollection.UpdateOne(ctx, bson.M{"_id": requestedProductObjectId}, bson.M{"$set": existingProduct})
-
 		if err2 != nil {
 			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err.Error()}})
 		}
-		return c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "product buying successful", Data: &echo.Map{"data": result}})
 
+		return c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "product buying successful", Data: &echo.Map{"data": result}})
 	}
 }
