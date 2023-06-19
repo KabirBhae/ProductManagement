@@ -1,6 +1,7 @@
 package productHelpers
 
 import (
+	"ProductManagement/helpers"
 	"ProductManagement/models"
 	"ProductManagement/responses"
 	"github.com/labstack/echo/v4"
@@ -17,7 +18,7 @@ func ViewAllProducts(c echo.Context) error {
 	defer cancel()
 
 	//err := productCollection.Find(ctx, bson.M{"username": usernamefromURL}).Decode(&user)
-	cur, err := productCollection.Find(ctx, bson.M{"quantity": bson.M{"$gt": 0}})
+	cur, err := productCollection.Find(ctx, bson.M{"isavailable": true, "quantity": bson.M{"$gt": 0}})
 
 	var products []models.Product
 
@@ -38,13 +39,19 @@ func ViewAllProducts(c echo.Context) error {
 }
 
 func ViewOwn(c echo.Context) error {
+	claims := helpers.GetClaimsFromJwt(c)
+	usernameFromClaims := claims.Username
+
 	usernamefromURL := c.Param("sellerUsername")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	//usernamefromURL := c.Param("username")
-
 	defer cancel()
-	cur, err := productCollection.Find(ctx, bson.M{"sellerusername": usernamefromURL, "quantity": bson.M{"$gte": 0}})
+
+	if usernamefromURL != usernameFromClaims {
+		return c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "unauthorised user", Data: &echo.Map{"data": ""}})
+	}
+
+	cur, err := productCollection.Find(ctx, bson.M{"sellerusername": usernamefromURL})
 	if err != nil {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "this seller doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
 	}

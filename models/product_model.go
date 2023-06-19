@@ -10,4 +10,6 @@ type Product struct {
 
 	SellerID       primitive.ObjectID `json:"sellerID"`
 	SellerUserName string             `json:"sellerUserName"`
+
+	IsAvailable bool `json:"isAvailable"`
 }

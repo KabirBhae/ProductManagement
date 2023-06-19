@@ -4,6 +4,7 @@ import (
 	"ProductManagement/helpers"
 	"ProductManagement/models"
 	"ProductManagement/responses"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -29,6 +30,7 @@ func BuyProduct(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "buyer doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
 	}
+	fmt.Println("still okay line 33")
 
 	var requestedProduct productDetails
 	//validate the request body
@@ -40,19 +42,22 @@ func BuyProduct(c echo.Context) error {
 	if validationErr := validate.Struct(&requestedProduct); validationErr != nil {
 		return c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "please provide ProductID, SellerID, Name, Price and Quantity correctly", Data: &echo.Map{"data": validationErr.Error()}})
 	}
-
+	//non positive not allowed
 	if requestedProduct.Quantity < 1 {
 		return c.JSON(http.StatusNotAcceptable, responses.UserResponse{Status: http.StatusNotAcceptable, Message: "please provide quantity greater than 0", Data: &echo.Map{"data": ""}})
 	}
 
-	var existingProduct models.Product
 	requestedProductObjectId, errr := primitive.ObjectIDFromHex(requestedProduct.Id)
 	if errr != nil {
 		return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "string cannot be parsed to ObjectID", Data: &echo.Map{"data": err.Error()}})
 	}
-	err2 := productCollection.FindOne(ctx, bson.M{"_id": requestedProductObjectId}).Decode(&existingProduct)
+
+	fmt.Println("still okay")
+
+	var existingProduct models.Product
+	err2 := productCollection.FindOne(ctx, bson.M{"_id": requestedProductObjectId, "isavailable": true}).Decode(&existingProduct)
 	if err2 != nil {
-		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "product doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
+		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "product doesn't exists in DB", Data: &echo.Map{"data": err2.Error()}})
 	}
 	if existingProduct.Quantity < 1 {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "product doesn't exists in DB", Data: &echo.Map{"data": ""}})
@@ -74,7 +79,7 @@ func BuyProduct(c echo.Context) error {
 
 		result, err2 := productCollection.UpdateOne(ctx, bson.M{"_id": requestedProductObjectId}, bson.M{"$set": existingProduct})
 		if err2 != nil {
-			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err.Error()}})
+			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err2.Error()}})
 		}
 
 		return c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "product buying successful", Data: &echo.Map{"data": result}})

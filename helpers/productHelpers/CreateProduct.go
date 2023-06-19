@@ -23,15 +23,15 @@ func CreateProduct(c echo.Context) error {
 	usernameFromClaims := claims.Username
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var product models.Product
-	var existingUser models.User
 	defer cancel()
 
+	var existingUser models.User
 	err := userCollection.FindOne(ctx, bson.M{"username": usernameFromClaims, "status": "Active"}).Decode(&existingUser)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "seller doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
 	}
 
+	var product models.Product
 	//validate the request body
 	if err := c.Bind(&product); err != nil {
 		return c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error while binding", Data: &echo.Map{"data": err.Error()}})
@@ -49,6 +49,7 @@ func CreateProduct(c echo.Context) error {
 		Price:          product.Price,
 		Quantity:       product.Quantity,
 		SellerUserName: existingUser.Username,
+		IsAvailable:    true,
 	}
 
 	result, err := productCollection.InsertOne(ctx, newProduct)
