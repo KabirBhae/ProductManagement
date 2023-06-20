@@ -4,7 +4,6 @@ import (
 	"ProductManagement/helpers"
 	"ProductManagement/models"
 	"ProductManagement/responses"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -25,12 +24,11 @@ func BuyProduct(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var existingUser models.User
-	err := userCollection.FindOne(ctx, bson.M{"username": usernameFromClaims, "status": "Active"}).Decode(&existingUser)
+	var buyer models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": usernameFromClaims, "status": "Active"}).Decode(&buyer)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "buyer doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
 	}
-	fmt.Println("still okay line 33")
 
 	var requestedProduct productDetails
 	//validate the request body
@@ -52,8 +50,6 @@ func BuyProduct(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "string cannot be parsed to ObjectID", Data: &echo.Map{"data": err.Error()}})
 	}
 
-	fmt.Println("still okay")
-
 	var existingProduct models.Product
 	err2 := productCollection.FindOne(ctx, bson.M{"_id": requestedProductObjectId, "isavailable": true}).Decode(&existingProduct)
 	if err2 != nil {
@@ -65,18 +61,30 @@ func BuyProduct(c echo.Context) error {
 	if requestedProduct.Quantity > existingProduct.Quantity {
 		return c.JSON(http.StatusNotAcceptable, responses.UserResponse{Status: http.StatusNotAcceptable, Message: "sufficient number of products doesn't exist in DB", Data: &echo.Map{"data": ""}})
 	}
-	if existingProduct.Price*float32(requestedProduct.Quantity) > existingUser.Balance {
+	if existingProduct.Price*float32(requestedProduct.Quantity) > buyer.Balance {
 		return c.JSON(http.StatusNotAcceptable, responses.UserResponse{Status: http.StatusNotAcceptable, Message: "user does not have sufficient balance", Data: &echo.Map{"data": ""}})
 	} else {
-		existingUser.Balance -= existingProduct.Price * float32(requestedProduct.Quantity)
-
-		_, err := userCollection.UpdateOne(ctx, bson.M{"username": usernameFromClaims}, bson.M{"$set": existingUser})
+		//decrease balance of buyer
+		buyer.Balance -= existingProduct.Price * float32(requestedProduct.Quantity)
+		_, err := userCollection.UpdateOne(ctx, bson.M{"username": buyer.Username}, bson.M{"$set": buyer})
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err.Error()}})
 		}
+		//increase balance of seller
+		var seller models.User
+		sellerID := existingProduct.SellerID
+		err3 := userCollection.FindOne(ctx, bson.M{"_id": sellerID, "status": "Active"}).Decode(&seller)
+		if err3 != nil {
+			return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "cannot buy product, seller doesn't exists in DB", Data: &echo.Map{"data": err3.Error()}})
+		}
+		seller.Balance += existingProduct.Price * float32(requestedProduct.Quantity)
+		_, err4 := userCollection.UpdateOne(ctx, bson.M{"username": seller.Username}, bson.M{"$set": seller})
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err4.Error()}})
+		}
 
+		//decrease quantity of products
 		existingProduct.Quantity -= requestedProduct.Quantity
-
 		result, err2 := productCollection.UpdateOne(ctx, bson.M{"_id": requestedProductObjectId}, bson.M{"$set": existingProduct})
 		if err2 != nil {
 			return c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: &echo.Map{"data": err2.Error()}})

@@ -25,8 +25,8 @@ func CreateProduct(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var existingUser models.User
-	err := userCollection.FindOne(ctx, bson.M{"username": usernameFromClaims, "status": "Active"}).Decode(&existingUser)
+	var seller models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": usernameFromClaims, "status": "Active"}).Decode(&seller)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, responses.UserResponse{Status: http.StatusNoContent, Message: "seller doesn't exists in DB", Data: &echo.Map{"data": err.Error()}})
 	}
@@ -44,11 +44,11 @@ func CreateProduct(c echo.Context) error {
 
 	newProduct := models.Product{
 		ProductID:      primitive.NewObjectID(),
-		SellerID:       existingUser.ID,
+		SellerID:       seller.ID,
 		Name:           product.Name,
 		Price:          product.Price,
 		Quantity:       product.Quantity,
-		SellerUserName: existingUser.Username,
+		SellerUserName: seller.Username,
 		IsAvailable:    true,
 	}
 
