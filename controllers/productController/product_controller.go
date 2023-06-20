@@ -19,3 +19,7 @@ func ViewAllProducts(c echo.Context) error {
 func ViewOwn(c echo.Context) error {
 	return productHelpers.ViewOwn(c)
 }
+
+func DeleteProduct(c echo.Context) error {
+	return productHelpers.DeleteProduct(c)
+}

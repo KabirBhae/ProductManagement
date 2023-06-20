@@ -16,4 +16,5 @@ func SellerRoute(e *echo.Echo) {
 	s.POST("/createProduct", productController.CreateProduct)
 	s.POST("/buyProduct", productController.BuyProduct)
 	s.GET("/viewProducts/:sellerUsername", productController.ViewOwn)
+	s.DELETE("/deleteProduct/:productID", productController.DeleteProduct)
 }
